@@ -11,6 +11,8 @@ current_milli_time = lambda: int(round(time.time() * 1000))
 """
 Convert [userID, itemID, ratingValue, timestamp] format to [two dimensions rating matrix] format
 """
+
+
 def convert_to_rating_mat(path):
     # Get all user IDs and item IDs.
     user_ids = set()
@@ -42,8 +44,7 @@ def convert_to_rating_mat(path):
     f.close()
 
     # Save two dimensions rating data to file.
-    #with open('./ratring_dat_' + current_milli_time().__str__() + '.txt','w+') as f:
-    with open('./rating_dat_BIG.txt','w+') as f:
+    with open('./rating_dat_BIG.txt', 'w+') as f:
         for i in xrange(rows):
             line = ""
             for j in xrange(columns):
@@ -53,9 +54,11 @@ def convert_to_rating_mat(path):
 """
 Compute [positive related items] matrix from [two dimensions rating matrix] format matrix
 """
+
+
 def calc_positive_mat_from_rating_mat(path):
     # Get rating data from file.
-    rating_matrix = np.loadtxt(open(path,'rb'),dtype=int, delimiter="\t")
+    rating_matrix = np.loadtxt(open(path, 'rb'), dtype=int, delimiter="\t")
     rows = rating_matrix.shape[0]
     columns = rating_matrix.shape[1]
 
@@ -65,7 +68,7 @@ def calc_positive_mat_from_rating_mat(path):
     # Compute P set for every user.
     for u in range(1, rows):
         print 1.0 * u / rows * 100
-        r = rating_matrix[u,:]
+        r = rating_matrix[u, :]
         avg = 1.0 * r.sum() / len(r[r != 0])
 
         sub_set = []
@@ -75,17 +78,17 @@ def calc_positive_mat_from_rating_mat(path):
 
         for i in range(0, len(sub_set)):
             for j in range(0, len(sub_set)):
-                if sub_set[i] != sub_set[j] :
-                    pi[sub_set[i],sub_set[j]] += 1
+                if sub_set[i] != sub_set[j]:
+                    pi[sub_set[i], sub_set[j]] += 1
 
     # Save two dimensions rating data to file.
-    #with open('./PI_matrix_' + current_milli_time().__str__() + '.txt','w+') as f:
-    with open('./PI_matrix_BIG.txt','w+') as f:
+    with open('./PI_matrix_BIG.txt', 'w+') as f:
         for i in xrange(columns):
             line = ""
             for j in xrange(columns):
-                line += (int(pi[i,j]).__str__()) + '\t'
+                line += (int(pi[i, j]).__str__()) + '\t'
             f.write(line[:-1] + '\n')
+
 
 class Edge:
     from_id = -1
@@ -102,6 +105,7 @@ class Edge:
 
     def __cmp__(self, other):
         return cmp(self.weight, other.weight)
+
 
 class RecommendItem:
     item_id = -1
@@ -126,14 +130,15 @@ class RecommendItem:
     def __cmp__(self, other):
         return cmp(self.frequency, other.frequency)
 
+
 def get_sub_positive_graph(rating_mat_path, positive_mat_path, user):
     # Load rating matrix data and positive matrix data.
-    rating_matrix = np.loadtxt(open(rating_mat_path,'rb'),dtype=int, delimiter="\t")
-    positive_matrix = np.loadtxt(open(positive_mat_path,'rb'),dtype=int, delimiter="\t")
+    rating_matrix = np.loadtxt(open(rating_mat_path, 'rb'), dtype=int, delimiter="\t")
+    positive_matrix = np.loadtxt(open(positive_mat_path, 'rb'), dtype=int, delimiter="\t")
     print 'Success\t[Loading data from file completed]'
 
     # Get the given user's positive related items.
-    r = rating_matrix[user,:]
+    r = rating_matrix[user, :]
     avg = r.sum() / len(r[r != 0])
     sub_set = []
     for i in range(1, rating_matrix.shape[1]):
@@ -144,14 +149,14 @@ def get_sub_positive_graph(rating_mat_path, positive_mat_path, user):
     # Build the given user's sub-positive graph.
     sub_graph = np.zeros((len(sub_set), rating_matrix.shape[1]))
     for i in range(0, len(sub_set)):
-        sub_graph[i,:] = positive_matrix[sub_set[i],:]
+        sub_graph[i, :] = positive_matrix[sub_set[i], :]
 
     # Pick up none zero edge from the sub-graph.
     candidates = []
     for i in range(0, len(sub_set)):
         from_id = sub_set[i]
         for to_id in range(1, rating_matrix.shape[1]):
-            if positive_matrix[from_id, to_id] != 0 :
+            if positive_matrix[from_id, to_id] != 0:
                 candidates.append(Edge(from_id, to_id, positive_matrix[from_id, to_id]))
 
     print 'Success\t[Build sub-graph completed]'
@@ -161,24 +166,24 @@ def get_sub_positive_graph(rating_mat_path, positive_mat_path, user):
     print 'Success\t[Find ' + len(candidates).__str__() + ' candidate edges]'
 
     # Save edges information to file.
-    #with open('./Candidate_edges_' + current_milli_time().__str__() + '.txt','w+') as f:
-    with open('./Candidate_edges_BIG_'+ str(user) +'.txt','w+') as f:
+    with open('./Candidate_edges_BIG_' + str(user) + '.txt', 'w+') as f:
         for i in candidates:
             line = str(i.from_id) + '\t' + str(i.to_id) + '\t' + str(i.weight)
             f.write(line + '\n')
         f.close()
 
+
 def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
     # Load rating matrix data and candidates matrix data.
-    rating_matrix = np.loadtxt(open(rating_mat_path,'rb'),dtype=int, delimiter="\t")
-    candidates_matrix = np.loadtxt(open(candidates_mat_path,'rb'),dtype=int, delimiter="\t")
+    rating_matrix = np.loadtxt(open(rating_mat_path, 'rb'), dtype=int, delimiter="\t")
+    candidates_matrix = np.loadtxt(open(candidates_mat_path, 'rb'), dtype=int, delimiter="\t")
 
     # Find all items which the given user has already rated.
     rated_items = bintrees.RBTree()
-    row = rating_matrix[user,:]
+    row = rating_matrix[user, :]
     for i in range(1, rating_matrix.shape[1]):
         if row[i] != 0:
-            rated_items.insert(i,i)
+            rated_items.insert(i, i)
 
     # Re-build edges,
     # this time, I remove those edges whose to_id has been already rated by the given user.
@@ -192,11 +197,11 @@ def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
         if not rated_items.__contains__(to_id):
             if not unrated_items.__contains__(to_id):
                 recommendation = RecommendItem(to_id)
-                recommendation.add_edge(rating_matrix[user,from_id], weight)
+                recommendation.add_edge(rating_matrix[user, from_id], weight)
                 unrated_items.insert(to_id, recommendation)
             else:
                 recommendation = unrated_items.get(to_id)
-                recommendation.add_edge(rating_matrix[user,from_id], weight)
+                recommendation.add_edge(rating_matrix[user, from_id], weight)
                 unrated_items.remove(to_id)
                 unrated_items.insert(to_id, recommendation)
 
@@ -213,9 +218,8 @@ def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
         print i.__str__() + '\t:\talgorithm recommends user to checkout out item:\t' + str(candidates[i].item_id) + '\t' + str(candidates[i].get_predict_rateing())
 
     # Save recommended items to file.
-    #with open('./recommended_items_' + current_milli_time().__str__() + '.txt','w+') as f:
     cnt = 0
-    with open('./recommended_items_BIG_' + str(user) + '.txt','w+') as f:
+    with open('./recommended_items_BIG_' + str(user) + '.txt', 'w+') as f:
         for i in candidates:
             if cnt >= k:
                 break
@@ -224,14 +228,15 @@ def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
             cnt += 1
         f.close()
 
+
 def validate_prediction(test_bench_path, prediction_item_path, user):
     # Load test bench data and predict data.
     test_bench_data = np.loadtxt(open(test_bench_path, 'rb'), dtype=int, delimiter="\t")
     prediction_data = np.loadtxt(open(prediction_item_path, 'rb'), dtype=int, delimiter="\t")
 
     # Get the given user's test bench data
-    test_bench = test_bench_data[test_bench_data[:,0] == user,:]
-    test_bench = test_bench[:,[0,1,2]]
+    test_bench = test_bench_data[test_bench_data[:, 0] == user, :]
+    test_bench = test_bench[:, [0, 1, 2]]
 
     prediction = bintrees.RBTree()
     for i in range(0, len(prediction_data)):
@@ -278,13 +283,13 @@ def automatically_recommend(user, k):
             calc_positive_mat_from_rating_mat('./rating_dat_BIG.txt')
     print 'Success\t[Got positive matrix data]'
 
-    if not os.path.isfile('./Candidate_edges_BIG_'+ str(user) +'.txt'):
+    if not os.path.isfile('./Candidate_edges_BIG_' + str(user) + '.txt'):
         get_sub_positive_graph('./rating_dat_BIG.txt', './PI_matrix_BIG.txt', user)
 
     if not os.path.isfile('./recommended_items_BIG_' + str(user) + '.txt'):
-        make_recommendation('./rating_dat_BIG.txt','./Candidate_edges_BIG_' + str(user) + '.txt', user, k)
+        make_recommendation('./rating_dat_BIG.txt', './Candidate_edges_BIG_' + str(user) + '.txt', user, k)
 
-    validate_prediction('./u1_BIG.test','./recommended_items_BIG_' + str(user) + '.txt', user)
+    validate_prediction('./u1_BIG.test', './recommended_items_BIG_' + str(user) + '.txt', user)
 
 if __name__ == "__main__":
     #convert_to_rating_mat('./u1_BIG.base')
@@ -292,6 +297,6 @@ if __name__ == "__main__":
     #get_sub_positive_graph('./rating_dat_BIG.txt', './PI_matrix_BIG.txt', 1)
     #make_recommendation('./rating_dat_BIG.txt','./Candidate_edges_BIG_1.txt',1, 2000)
     #validate_prediction('./u1_BIG.test','./recommended_items_BIG_1.txt',1)
-    automatically_recommend(1, 200)
+    automatically_recommend(1, 100)
 
     #1/42
