@@ -3,6 +3,8 @@ __author__ = 'USER007'
 import numpy as np
 import time
 import bintrees
+import math
+import os
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -40,7 +42,8 @@ def convert_to_rating_mat(path):
     f.close()
 
     # Save two dimensions rating data to file.
-    with open('./ratring_dat_' + current_milli_time().__str__() + '.txt','w+') as f:
+    #with open('./ratring_dat_' + current_milli_time().__str__() + '.txt','w+') as f:
+    with open('./rating_dat_BIG.txt','w+') as f:
         for i in xrange(rows):
             line = ""
             for j in xrange(columns):
@@ -76,7 +79,8 @@ def calc_positive_mat_from_rating_mat(path):
                     pi[sub_set[i],sub_set[j]] += 1
 
     # Save two dimensions rating data to file.
-    with open('./PI_matrix_' + current_milli_time().__str__() + '.txt','w+') as f:
+    #with open('./PI_matrix_' + current_milli_time().__str__() + '.txt','w+') as f:
+    with open('./PI_matrix_BIG.txt','w+') as f:
         for i in xrange(columns):
             line = ""
             for j in xrange(columns):
@@ -114,10 +118,13 @@ class RecommendItem:
         self.value += rating * freq
 
     def get_predict_rateing(self):
-        return self.value / self.frequency
+        return round(1.0 * self.value / self.frequency, 0)
+
+    def get_accurate_predict_rating(self):
+        return 1.0 * self.value / self.frequency
 
     def __cmp__(self, other):
-        return cmp(self.get_predict_rateing(), other.get_predict_rateing())
+        return cmp(self.frequency, other.frequency)
 
 def get_sub_positive_graph(rating_mat_path, positive_mat_path, user):
     # Load rating matrix data and positive matrix data.
@@ -154,7 +161,8 @@ def get_sub_positive_graph(rating_mat_path, positive_mat_path, user):
     print 'Success\t[Find ' + len(candidates).__str__() + ' candidate edges]'
 
     # Save edges information to file.
-    with open('./Candidate_edges_' + current_milli_time().__str__() + '.txt','w+') as f:
+    #with open('./Candidate_edges_' + current_milli_time().__str__() + '.txt','w+') as f:
+    with open('./Candidate_edges_BIG_'+ str(user) +'.txt','w+') as f:
         for i in candidates:
             line = str(i.from_id) + '\t' + str(i.to_id) + '\t' + str(i.weight)
             f.write(line + '\n')
@@ -165,7 +173,7 @@ def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
     rating_matrix = np.loadtxt(open(rating_mat_path,'rb'),dtype=int, delimiter="\t")
     candidates_matrix = np.loadtxt(open(candidates_mat_path,'rb'),dtype=int, delimiter="\t")
 
-    # Find all items which the given use has rated.
+    # Find all items which the given user has already rated.
     rated_items = bintrees.RBTree()
     row = rating_matrix[user,:]
     for i in range(1, rating_matrix.shape[1]):
@@ -191,26 +199,99 @@ def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
                 recommendation.add_edge(rating_matrix[user,from_id], weight)
                 unrated_items.remove(to_id)
                 unrated_items.insert(to_id, recommendation)
-            #candidates.append(Edge(from_id, to_id, weight))
 
+    # Sort candidates so that I can easily recommend k items to the given user form
+    # 0th row to kth row.
     for key in unrated_items.keys():
         candidates.append(unrated_items.get(key))
-
     candidates.sort(reverse=True)
 
-
-    # candidates.sort(reverse=True)
-    # print 'Candidate edges:'
-    # for i in candidates:
-    #     print i
-    #
+    # Print recommended items.
     for i in range(0, len(candidates)):
         if i >= k:
             break
-        print 'Algorithm recommends user to checkout out item:\t' + str(candidates[i].item_id) + '\t' + str(candidates[i].get_predict_rateing())
+        print i.__str__() + '\t:\talgorithm recommends user to checkout out item:\t' + str(candidates[i].item_id) + '\t' + str(candidates[i].get_predict_rateing())
+
+    # Save recommended items to file.
+    #with open('./recommended_items_' + current_milli_time().__str__() + '.txt','w+') as f:
+    cnt = 0
+    with open('./recommended_items_BIG_' + str(user) + '.txt','w+') as f:
+        for i in candidates:
+            if cnt >= k:
+                break
+            line = str(user) + '\t' + str(i.item_id) + '\t' + str(int(i.get_predict_rateing()))
+            f.write(line + '\n')
+            cnt += 1
+        f.close()
+
+def validate_prediction(test_bench_path, prediction_item_path, user):
+    # Load test bench data and predict data.
+    test_bench_data = np.loadtxt(open(test_bench_path, 'rb'), dtype=int, delimiter="\t")
+    prediction_data = np.loadtxt(open(prediction_item_path, 'rb'), dtype=int, delimiter="\t")
+
+    # Get the given user's test bench data
+    test_bench = test_bench_data[test_bench_data[:,0] == user,:]
+    test_bench = test_bench[:,[0,1,2]]
+
+    prediction = bintrees.RBTree()
+    for i in range(0, len(prediction_data)):
+        if not prediction.__contains__(prediction_data[i, 1]):
+            prediction.insert(prediction_data[i, 1], prediction_data[i, 2])
+
+    common_in_total = 0
+    error = 0.0
+    right_prediction_cnt = 0
+    false_prediction_cnt = 0
+
+    for i in range(0, len(test_bench)):
+        if prediction.__contains__(test_bench[i, 1]):
+            common_in_total += 1
+
+            print str(test_bench[i, 2]) + '\t' + str(prediction.get(test_bench[i, 1])) + '\t' + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
+
+            error += math.pow((test_bench[i, 2] - prediction.get(test_bench[i, 1])), 2)
+            if test_bench[i, 2] + prediction.get(test_bench[i, 1]) >= 8 and test_bench[i, 2] + prediction.get(test_bench[i, 1]) <= 10:
+                right_prediction_cnt += 1
+            else:
+                false_prediction_cnt += 1
+
+    print 'MSE is:\t' + str(math.sqrt(error))
+    print 'Common in total:\t' + str(common_in_total)
+    print 'Right rate:\t' + str(1.0 * right_prediction_cnt / common_in_total * 100) + '\t' + str(right_prediction_cnt)
+    print 'False rate:\t' + str(1.0 * false_prediction_cnt / common_in_total * 100) + '\t' + str(false_prediction_cnt)
+
+
+def automatically_recommend(user, k):
+    if not os.path.isfile('./rating_dat_BIG.txt'):
+        if not os.path.isfile('./u1_BIG.base'):
+            print 'Error\t[u1_BIG.base not found]'
+            return
+        else:
+            convert_to_rating_mat('./u1_BIG.base')
+    print 'Success\t[Got rating data]'
+
+    if not os.path.isfile('./PI_matrix_BIG.txt'):
+        if not os.path.isfile('./rating_dat_BIG.txt'):
+            print 'Error\t[rating_dat_BIG.txt not found]'
+            return
+        else:
+            calc_positive_mat_from_rating_mat('./rating_dat_BIG.txt')
+    print 'Success\t[Got positive matrix data]'
+
+    if not os.path.isfile('./Candidate_edges_BIG_'+ str(user) +'.txt'):
+        get_sub_positive_graph('./rating_dat_BIG.txt', './PI_matrix_BIG.txt', user)
+
+    if not os.path.isfile('./recommended_items_BIG_' + str(user) + '.txt'):
+        make_recommendation('./rating_dat_BIG.txt','./Candidate_edges_BIG_' + str(user) + '.txt', user, k)
+
+    validate_prediction('./u1_BIG.test','./recommended_items_BIG_' + str(user) + '.txt', user)
 
 if __name__ == "__main__":
     #convert_to_rating_mat('./u1_BIG.base')
-    #calc_positive_mat_from_rating_mat('./ratring_dat_BIG.txt')
-    #get_sub_positive_graph('./ratring_dat_BIG.txt', './PI_matrix_BIG.txt', 1)
-    make_recommendation('./ratring_dat_BIG.txt','./Candidate_edges_BIG.txt',1, 10)
+    #calc_positive_mat_from_rating_mat('./rating_dat_BIG.txt')
+    #get_sub_positive_graph('./rating_dat_BIG.txt', './PI_matrix_BIG.txt', 1)
+    #make_recommendation('./rating_dat_BIG.txt','./Candidate_edges_BIG_1.txt',1, 2000)
+    #validate_prediction('./u1_BIG.test','./recommended_items_BIG_1.txt',1)
+    automatically_recommend(1, 200)
+
+    #1/42
