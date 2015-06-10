@@ -49,14 +49,20 @@ def convert_to_rating_mat(path):
 
 def calc_user_similarity(rating_mat_path):
     # Load rating matrix data and positive matrix data.
-    rating_matrix = np.loadtxt(rating_mat_path, dtype=int, delimiter="\t")
+    rating_matrix = np.loadtxt(rating_mat_path, dtype=float, delimiter="\t")
 
     # Normalize rating data
     for i in xrange(1, rating_matrix.shape[0]):
         print 1.0 * i / rating_matrix.shape[0] * 100
         r = rating_matrix[i, :]
         avg = r.sum() / len(r[r != 0])
-        rating_matrix[i,:] = rating_matrix[i,:] - avg
+        # rating_matrix[i,:] = r[r != 0] - avg
+        variance = np.zeros((1, rating_matrix.shape[1]), dtype=float)[0, :]
+        variance[r != 0] = avg
+        rating_matrix[i, :] = rating_matrix[i, :] - variance
+
+    # Save two digits to make the result more concise.
+    rating_matrix.round(2)
 
     # Compute user similarities.
     user_sim_graph_data = np.zeros((rating_matrix.shape[0], rating_matrix.shape[0]))
@@ -76,44 +82,81 @@ def calc_user_similarity(rating_mat_path):
             f.write(line[:-1] + '\n')
 
 
-def cosine_similarity(v1, v2):
+def find_common_items(v1, v2):
+    common = (v1 != 0) & (v2 != 0)
+    return common
+
+
+def cosine_similarity(vector1, vector2):
+    # Find common rating items.
+    common = find_common_items(vector1, vector2)
+    v1 = vector1[common]
+    v2 = vector2[common]
+
+    if (common == False).all():
+        return 0
+
+    # Calculate cosine similarity.
     numerator = sum(v1 * v2)
-    denominator = math.sqrt(sum(np.power(v1, 2))) * math.sqrt(sum(np.power(v2, 2)))
+    denominator = math.sqrt(sum(np.power(vector1, 2))) * math.sqrt(sum(np.power(vector2, 2)))
     sim = 1.0 * numerator / denominator
 
     return sim
 
 
-def pearson_similarity(v1, v2):
-    avg1 = sum(v1) / len(v1)
-    avg2 = sum(v2) / len(v2)
+def pearson_similarity(vector1, vector2):
+    # Compute average rating for each vector.
+    avg1 = sum(vector1) / len(vector1)
+    avg2 = sum(vector2) / len(vector2)
 
+    # Find common rating items.
+    common = find_common_items(vector1, vector2)
+    v1 = vector1[common]
+    v2 = vector2[common]
+
+    # Calculate pearson correlation factor.
     numerator = sum((v1 - avg1) * (v2 - avg2))
-    denominator = math.sqrt(sum(np.power(v1 - avg1, 2)) * sum(np.power(v2 - avg2, 2)))
+    denominator = math.sqrt(sum(np.power(v1 - avg1, 2))) * math.sqrt((sum(np.power(v2 - avg2, 2))))
     sim = 1.0 * numerator / denominator
 
     return sim
+
 
 if __name__ == '__main__':
     calc_user_similarity('./rating_dat_BIG.txt')
 
-    # rating_matrix = np.zeros((3,5), dtype=int)
+    # rating_matrix = np.zeros((3,5), dtype=float)
+    # rating_matrix[0,0] = 0
+    # rating_matrix[0,1] = 4
+    # rating_matrix[0,2] = 0
+    # rating_matrix[0,3] = 1
+    # rating_matrix[0,4] = 1
     # rating_matrix[1,0] = 1
     # rating_matrix[1,1] = 2
     # rating_matrix[1,2] = 3
-    # rating_matrix[1,3] = 42
-    # rating_matrix[1,4] = 5
+    # rating_matrix[1,3] = 5
+    # rating_matrix[1,4] = 0
     # rating_matrix[2,0] = 1
     # rating_matrix[2,1] = 2
     # rating_matrix[2,2] = 3
     # rating_matrix[2,3] = 4
     # rating_matrix[2,4] = 4
     # print rating_matrix
-    #
-    # v1 = np.array(rating_matrix[1,:])
-    # v2 = np.array(rating_matrix[2,:])
     # print '--------'
+    #
+    # v0 = rating_matrix[0, :]
+    # v1 = rating_matrix[1, :]
+    #
+    # print v0
     # print v1
-    # print v2
-    # print pearson_similarity(v1, v2)
-    # print cosine_similarity(v1, v2)
+    #
+    # print v0 != 0
+    # print v1 != 0
+    #
+    #
+    # common = find_common_items(v0, v1)
+    # print common
+    # print v0[common]
+    # print v1[common]
+    #
+    # print pearson_similarity(v0[common], v1[common])
