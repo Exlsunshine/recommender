@@ -75,10 +75,44 @@ def calc_user_similarity(rating_mat_path):
 
     # Save user similarities to file.
     with open('./user_similarities.txt', 'w+') as f:
-        for i in xrange(1, user_sim_graph_data.shape[0]):
+        for i in xrange(0, user_sim_graph_data.shape[0]):
             line = ""
-            for j in xrange(1, user_sim_graph_data.shape[0]):
+            for j in xrange(0, user_sim_graph_data.shape[0]):
                 line += user_sim_graph_data[i][j].__str__() + '\t'
+            f.write(line[:-1] + '\n')
+
+
+def calc_item_similarity(rating_mat_path):
+    # Load rating matrix data and positive matrix data.
+    rating_matrix = np.loadtxt(rating_mat_path, dtype=float, delimiter="\t")
+
+    # Normalize rating data
+    for i in xrange(1, rating_matrix.shape[1]):
+        print 1.0 * i / rating_matrix.shape[1] * 100
+        c = rating_matrix[:, i]
+        avg = c.sum() / len(c[c != 0])
+        variance = np.zeros((1, rating_matrix.shape[0]), dtype=float)[0, :]
+        variance[c != 0] = avg
+        rating_matrix[:, i] = rating_matrix[:, i] - variance
+
+    # Save two digits to make the result more concise.
+    rating_matrix.round(2)
+
+    # Compute item similarities.
+    item_sim_graph_data = np.zeros((rating_matrix.shape[1], rating_matrix.shape[1]))
+    for i in xrange(1, rating_matrix.shape[1]):
+        print 1.0 * i / rating_matrix.shape[1] * 100
+        for j in xrange(i + 1, rating_matrix.shape[1]):
+            item_sim_graph_data[i, j] = round(cosine_similarity(rating_matrix[:, i], rating_matrix[:, j]), 2)
+            item_sim_graph_data[j, i] = item_sim_graph_data[i, j]
+    print 'Successful\t[Complete computing item similarities]'
+
+    # Save item similarities to file.
+    with open('./item_similarities.txt', 'w+') as f:
+        for i in xrange(0, item_sim_graph_data.shape[0]):
+            line = ""
+            for j in xrange(0, item_sim_graph_data.shape[0]):
+                line += item_sim_graph_data[i][j].__str__() + '\t'
             f.write(line[:-1] + '\n')
 
 
@@ -123,7 +157,7 @@ def pearson_similarity(vector1, vector2):
 
 
 if __name__ == '__main__':
-    calc_user_similarity('./rating_dat_BIG.txt')
+    calc_item_similarity('./rating_dat_BIG.txt')
 
     # rating_matrix = np.zeros((3,5), dtype=float)
     # rating_matrix[0,0] = 0
@@ -144,8 +178,8 @@ if __name__ == '__main__':
     # print rating_matrix
     # print '--------'
     #
-    # v0 = rating_matrix[0, :]
-    # v1 = rating_matrix[1, :]
+    # v0 = rating_matrix[:,0]
+    # v1 = rating_matrix[:,1]
     #
     # print v0
     # print v1
@@ -159,4 +193,4 @@ if __name__ == '__main__':
     # print v0[common]
     # print v1[common]
     #
-    # print pearson_similarity(v0[common], v1[common])
+    # print cosine_similarity(v0, v1)
