@@ -82,6 +82,31 @@ def calc_user_similarity(rating_mat_path):
             f.write(line[:-1] + '\n')
 
 
+def calc_normalize_data(rating_mat_path):
+    # Load rating matrix data and positive matrix data.
+    rating_matrix = np.loadtxt(rating_mat_path, dtype=float, delimiter="\t")
+
+    # Normalize rating data
+    for i in xrange(1, rating_matrix.shape[1]):
+        print 1.0 * i / rating_matrix.shape[1] * 100
+        c = rating_matrix[:, i]
+        avg = c.sum() / len(c[c != 0])
+        variance = np.zeros((1, rating_matrix.shape[0]), dtype=float)[0, :]
+        variance[c != 0] = avg
+        rating_matrix[:, i] = rating_matrix[:, i] - variance
+
+    # Save two digits to make the result more concise.
+    rating_matrix.round(2)
+
+    # Save item similarities to file.
+    with open('./normalized_rating_dat_BIG.txt', 'w+') as f:
+        for i in xrange(1, rating_matrix.shape[0]):
+            line = ""
+            for j in xrange(1, rating_matrix.shape[1]):
+                line += rating_matrix[i][j].__str__() + '\t'
+            f.write(line[:-1] + '\n')
+
+
 def calc_item_similarity(rating_mat_path):
     # Load rating matrix data and positive matrix data.
     rating_matrix = np.loadtxt(rating_mat_path, dtype=float, delimiter="\t")
@@ -157,7 +182,7 @@ def pearson_similarity(vector1, vector2):
 
 
 if __name__ == '__main__':
-    calc_item_similarity('./rating_dat_BIG.txt')
+    calc_normalize_data('./rating_dat_BIG.txt')
 
     # rating_matrix = np.zeros((3,5), dtype=float)
     # rating_matrix[0,0] = 0
