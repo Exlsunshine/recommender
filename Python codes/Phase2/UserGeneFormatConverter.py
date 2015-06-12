@@ -53,6 +53,25 @@ def load_user_gene_data(user_data_path, occupation):
         user_data[i] = [user_id, user_age, user_gender, user_occ]
 
     # Features scaling.
+    user_data = std_dev_normalization(user_data)
+
+    # Save scaled result to file.
+    with open('../dataset/output/normalized_user_genes_data.txt', 'w+') as f:
+        for i in xrange(0, len(user_data)):
+            line = ""
+            for j in xrange(0, len(user_data[0])):
+                line += str(user_data[i, j]) + '\t'
+            f.write(line[:-1] + '\n')
+
+    return user_data
+
+
+"""
+x' = (x - min) / (max - min)
+"""
+
+
+def min_max_normalization(user_data):
     # Scale age and occupation feature value into [0, 1]
     user_age_min = min(user_data[:, 1])
     user_age_max_gap = max(user_data[:, 1]) - user_age_min
@@ -62,13 +81,29 @@ def load_user_gene_data(user_data_path, occupation):
         user_data[i, 1] = 1.0 * round((user_data[i, 1] - user_age_min) / user_age_max_gap, 2)
         user_data[i, 3] = 1.0 * round((user_data[i, 3] - user_occ_min) / user_occ_max_gap, 2)
 
-    # Save scaled result to file.
-    with open('../dataset/output/user_genes_data.txt', 'w+') as f:
-        for i in xrange(0, len(user_data)):
-            line = ""
-            for j in xrange(0, len(user_data[0])):
-                line += str(user_data[i, j]) + '\t'
-            f.write(line[:-1] + '\n')
+    return user_data
+
+
+"""
+x' = (x - mean) / standard deviation(X)
+"""
+
+
+def std_dev_normalization(user_data):
+    user_age = user_data[:, 1]
+    user_gender = user_data[:, 2]
+    user_occ = user_data[:, 3]
+
+    user_age_mean = numpy.mean(user_age)
+    user_age_std_dev = numpy.std(user_age)
+    user_gender_mean = numpy.mean(user_gender)
+    user_gender_std_dev = numpy.std(user_gender)
+    user_occ_mean = numpy.mean(user_occ)
+    user_occ_std_dev = numpy.std(user_occ)
+
+    user_data[:, 1] = numpy.round((user_age - user_age_mean) / user_age_std_dev, 2)
+    user_data[:, 2] = numpy.round((user_gender - user_gender_mean) / user_gender_std_dev, 2)
+    user_data[:, 3] = numpy.round((user_occ - user_occ_mean) / user_occ_std_dev, 2)
 
     return user_data
 
