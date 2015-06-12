@@ -3,12 +3,15 @@ __author__ = 'USER007'
 """
 Convert u.item file to [gene1, gene2, gene3, gene4... gen19] format
 Example result: 0   1   0   1   1   1   0
+
+Note that: u.item data does not need to be normalized, because all it's gene data are either 1 or 0
 """
 
 
 if __name__ == '__main__':
-    path = 'D:\Data\Graduate_1_Spring\Recommender System\Dataset\ml-100k\u.item'
+    path = '../dataset/input/u.item'
 
+    # Extract last 19 gene data columns.
     genes = []
     with open(path) as f:
         for line in f:
@@ -25,6 +28,7 @@ if __name__ == '__main__':
             genes.append(row)
     f.close()
 
-    with open('./item_genes_data.txt', 'w+') as f:
+    # Save item gene data to file.
+    with open('../dataset/output/normalized_item_genes_data.txt', 'w+') as f:
         for i in genes:
             f.write(i[:-1] + '\n')
