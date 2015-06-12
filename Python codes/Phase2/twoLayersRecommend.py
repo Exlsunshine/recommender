@@ -39,7 +39,7 @@ def convert_to_rating_mat(path):
     f.close()
 
     # Save two dimensions rating data to file.
-    with open('./rating_dat_BIG.txt', 'w+') as f:
+    with open('../dataset/output/user_rating_data.txt', 'w+') as f:
         for i in xrange(rows):
             line = ""
             for j in xrange(columns):
@@ -74,7 +74,7 @@ def calc_user_similarity(rating_mat_path):
     print 'Successful\t[Complete computing user similarities]'
 
     # Save user similarities to file.
-    with open('./user_similarities.txt', 'w+') as f:
+    with open('../dataset/output/user_similarities.txt', 'w+') as f:
         for i in xrange(0, user_sim_graph_data.shape[0]):
             line = ""
             for j in xrange(0, user_sim_graph_data.shape[0]):
@@ -82,7 +82,7 @@ def calc_user_similarity(rating_mat_path):
             f.write(line[:-1] + '\n')
 
 
-def calc_normalize_data(rating_mat_path):
+def calc_vertical_normalize_data(rating_mat_path):
     # Load rating matrix data and positive matrix data.
     rating_matrix = np.loadtxt(rating_mat_path, dtype=float, delimiter="\t")
 
@@ -94,17 +94,46 @@ def calc_normalize_data(rating_mat_path):
         variance = np.zeros((1, rating_matrix.shape[0]), dtype=float)[0, :]
         variance[c != 0] = avg
         rating_matrix[:, i] = rating_matrix[:, i] - variance
+    print 'Success [Complete normalizing rating data]'
 
     # Save two digits to make the result more concise.
     rating_matrix.round(2)
 
     # Save item similarities to file.
-    with open('./normalized_rating_dat_BIG.txt', 'w+') as f:
+    with open('../dataset/output/vertical_normalized_user_rating_data.txt', 'w+') as f:
         for i in xrange(1, rating_matrix.shape[0]):
             line = ""
             for j in xrange(1, rating_matrix.shape[1]):
                 line += rating_matrix[i][j].__str__() + '\t'
             f.write(line[:-1] + '\n')
+    print 'Success [Complete saving normalized rating data]'
+
+
+def calc_horizontal_normalize_data(rating_mat_path):
+    # Load rating matrix data and positive matrix data.
+    rating_matrix = np.loadtxt(rating_mat_path, dtype=float, delimiter="\t")
+
+    # Normalize rating data
+    for i in xrange(1, rating_matrix.shape[0]):
+        print 1.0 * i / rating_matrix.shape[0] * 100
+        r = rating_matrix[i,:]
+        avg = r.sum() / len(r[r != 0])
+        variance = np.zeros((1, rating_matrix.shape[1]), dtype=float)[0, :]
+        variance[r != 0] = avg
+        rating_matrix[i,:] = rating_matrix[i,:] - variance
+    print 'Success [Complete normalizing rating data]'
+
+    # Save two digits to make the result more concise.
+    rating_matrix.round(2)
+
+    # Save item similarities to file.
+    with open('../dataset/output/horizontal_normalized_user_rating_data.txt', 'w+') as f:
+        for i in xrange(1, rating_matrix.shape[0]):
+            line = ""
+            for j in xrange(1, rating_matrix.shape[1]):
+                line += rating_matrix[i][j].__str__() + '\t'
+            f.write(line[:-1] + '\n')
+    print 'Success [Complete saving normalized rating data]'
 
 
 def calc_item_similarity(rating_mat_path):
@@ -182,40 +211,5 @@ def pearson_similarity(vector1, vector2):
 
 
 if __name__ == '__main__':
-    calc_normalize_data('./rating_dat_BIG.txt')
-
-    # rating_matrix = np.zeros((3,5), dtype=float)
-    # rating_matrix[0,0] = 0
-    # rating_matrix[0,1] = 4
-    # rating_matrix[0,2] = 0
-    # rating_matrix[0,3] = 1
-    # rating_matrix[0,4] = 1
-    # rating_matrix[1,0] = 1
-    # rating_matrix[1,1] = 2
-    # rating_matrix[1,2] = 3
-    # rating_matrix[1,3] = 5
-    # rating_matrix[1,4] = 0
-    # rating_matrix[2,0] = 1
-    # rating_matrix[2,1] = 2
-    # rating_matrix[2,2] = 3
-    # rating_matrix[2,3] = 4
-    # rating_matrix[2,4] = 4
-    # print rating_matrix
-    # print '--------'
-    #
-    # v0 = rating_matrix[:,0]
-    # v1 = rating_matrix[:,1]
-    #
-    # print v0
-    # print v1
-    #
-    # print v0 != 0
-    # print v1 != 0
-    #
-    #
-    # common = find_common_items(v0, v1)
-    # print common
-    # print v0[common]
-    # print v1[common]
-    #
-    # print cosine_similarity(v0, v1)
+    convert_to_rating_mat('../dataset/input/u1_BIG.base')
+    calc_vertical_normalize_data('../dataset/output/user_rating_data.txt')
