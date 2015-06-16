@@ -104,9 +104,92 @@ def cosine_similarity(v1, v2):
     return sim
 
 
+class SimilarUser:
+    original_user_id = -1
+    alike_user_id = -1
+    similarity = -1
+
+    def __init__(self, original_user_id, alike_user_id, similarity):
+        self.original_user_id = original_user_id
+        self.alike_user_id = alike_user_id
+        self.similarity = similarity
+
+    def __cmp__(self, other):
+        return cmp(self.similarity, other.similarity)
+
+    def __str__(self):
+        return self.alike_user_id.__str__() + '\t' + self.similarity.__str__()
+
+
+class SimilarItem:
+    original_item_id = -1
+    alike_item_id = -1
+    similarity = -1
+
+    def __init__(self, original_item_id, alike_item_id, similarity):
+        self.original_item_id = original_item_id
+        self.alike_item_id = alike_item_id
+        self.similarity = similarity
+
+    def __cmp__(self, other):
+        return cmp(self.similarity, other.similarity)
+
+
+class RatingData:
+    user_id = -1
+    item_id = -1
+    rating = -1
+
+    def __init__(self, user_id, item_id, rating):
+        self.user_id = user_id
+        self.item_id = item_id
+        self.rating = rating
+
+    def __cmp__(self, other):
+        return cmp(self.rating, other.rating)
+
+    def __str__(self):
+        return '[user][item][rating]:\t' + self.user_id.__str__() + '\t' + self.item_id.__str__() + '\t' + self.rating.__str__()
+
+
+def make_recommendation(user_gene_similarity_data_path, item_gene_similarity_data_path, normalized_user_rating_data_path, user_id, recommend_num):
+    # Load user similarity data and item similarity data.
+    user_sim_matrix = numpy.loadtxt(user_gene_similarity_data_path, dtype=float, delimiter="\t")
+    item_sim_matrix = numpy.loadtxt(item_gene_similarity_data_path, dtype=float, delimiter="\t")
+    normalize_user_rating_matrix = numpy.loadtxt(normalized_user_rating_data_path, dtype=float, delimiter="\t")
+    print 'Success [Loading data completed]'
+
+    # Find user's neighbors
+    # user_id minus one because the matrix is zero-based index, but the user_id begins from one.
+    user = user_sim_matrix[user_id - 1,:]
+    top_similar_users = user.argsort()[-recommend_num:][::-1]
+    neighbor_users = []
+    for i in xrange(0, len(top_similar_users)):
+        neighbor_users.append(SimilarUser(user_id, top_similar_users[i] + 1, user[top_similar_users[i]]))
+    print 'Success [Finding user neighbors completed]'
+
+    # Find those items that the given user has been rated.
+    # i plus one because the matrix is zero-based index, but the item_id begins from one.
+    rated_items = []
+    for i in xrange(0, normalize_user_rating_matrix.shape[1]):
+        if (normalize_user_rating_matrix[user_id - 1, i] != 0):
+            rated_items.append(RatingData(user_id, i + 1, normalize_user_rating_matrix[user_id -1, i]))
+
+    # Sort rated_items so that I can find the given user's most like items.
+    rated_items.sort(reverse=True)
+    print 'Success [Finding rated items completed]'
+
+
+
 if __name__ == '__main__':
     # normalized_item_gene_data_path = '../dataset/output/normalized_item_genes_data.txt'
     # calc_item_similarity_from_gene(normalized_item_gene_data_path)
 
-    normalized_user_gene_data_path = '../dataset/output/normalized_user_genes_data.txt'
-    calc_user_similarity_from_gene(normalized_user_gene_data_path)
+    # normalized_user_gene_data_path = '../dataset/output/normalized_user_genes_data.txt'
+    # calc_user_similarity_from_gene(normalized_user_gene_data_path)
+
+    user_gene_similarity_data = '../dataset/output/user_gene_similarity_data.txt'
+    item_gene_similarity_data = '../dataset/output/item_gene_similarity_data.txt'
+    normalized_user_rating_data = '../dataset/output/normalized_user_rating_data.txt'
+
+    make_recommendation(user_gene_similarity_data, item_gene_similarity_data, normalized_user_rating_data,1, 20)
