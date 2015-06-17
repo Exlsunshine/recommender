@@ -211,5 +211,5 @@ def pearson_similarity(vector1, vector2):
 
 
 if __name__ == '__main__':
-    convert_to_rating_mat('../dataset/input/u1_BIG.base')
-    calc_vertical_normalize_data('../dataset/output/user_rating_data.txt')
+    # convert_to_rating_mat('../dataset/input/u1_BIG.base')
+    calc_horizontal_normalize_data('../dataset/output/user_rating_data.txt')
