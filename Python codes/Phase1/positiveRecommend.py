@@ -58,7 +58,7 @@ Compute [positive related items] matrix from [two dimensions rating matrix] form
 
 def calc_positive_mat_from_rating_mat(path):
     # Get rating data from file.
-    rating_matrix = np.loadtxt(open(path, 'rb'), dtype=int, delimiter="\t")
+    rating_matrix = np.loadtxt(path, dtype=int, delimiter="\t")
     rows = rating_matrix.shape[0]
     columns = rating_matrix.shape[1]
 
@@ -121,7 +121,7 @@ class RecommendItem:
         self.frequency += freq
         self.value += rating * freq
 
-    def get_predict_rateing(self):
+    def get_predict_rating(self):
         return round(1.0 * self.value / self.frequency, 0)
 
     def get_accurate_predict_rating(self):
@@ -133,8 +133,8 @@ class RecommendItem:
 
 def get_sub_positive_graph(rating_mat_path, positive_mat_path, user):
     # Load rating matrix data and positive matrix data.
-    rating_matrix = np.loadtxt(open(rating_mat_path, 'rb'), dtype=int, delimiter="\t")
-    positive_matrix = np.loadtxt(open(positive_mat_path, 'rb'), dtype=int, delimiter="\t")
+    rating_matrix = np.loadtxt(rating_mat_path, dtype=int, delimiter="\t")
+    positive_matrix = np.loadtxt(positive_mat_path, dtype=int, delimiter="\t")
     print 'Success\t[Loading data from file completed]'
 
     # Get the given user's positive related items.
@@ -175,8 +175,8 @@ def get_sub_positive_graph(rating_mat_path, positive_mat_path, user):
 
 def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
     # Load rating matrix data and candidates matrix data.
-    rating_matrix = np.loadtxt(open(rating_mat_path, 'rb'), dtype=int, delimiter="\t")
-    candidates_matrix = np.loadtxt(open(candidates_mat_path, 'rb'), dtype=int, delimiter="\t")
+    rating_matrix = np.loadtxt(rating_mat_path, dtype=int, delimiter="\t")
+    candidates_matrix = np.loadtxt(candidates_mat_path, dtype=int, delimiter="\t")
 
     # Find all items which the given user has already rated.
     rated_items = bintrees.RBTree()
@@ -215,7 +215,8 @@ def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
     for i in range(0, len(candidates)):
         if i >= k:
             break
-        print i.__str__() + '\t:\talgorithm recommends user to checkout out item:\t' + str(candidates[i].item_id) + '\t' + str(candidates[i].get_predict_rating())
+        print i.__str__() + '\t:\talgorithm recommends user to checkout out item:\t' + str(candidates[i].item_id) \
+              + '\t' + str(candidates[i].get_predict_rating())
 
     # Save recommended items to file.
     cnt = 0
@@ -231,8 +232,8 @@ def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
 
 def validate_prediction(test_bench_path, prediction_item_path, user):
     # Load test bench data and predict data.
-    test_bench_data = np.loadtxt(open(test_bench_path, 'rb'), dtype=int, delimiter="\t")
-    prediction_data = np.loadtxt(open(prediction_item_path, 'rb'), dtype=int, delimiter="\t")
+    test_bench_data = np.loadtxt(test_bench_path, dtype=int, delimiter="\t")
+    prediction_data = np.loadtxt(prediction_item_path, dtype=int, delimiter="\t")
 
     # Get the given user's test bench data
     test_bench = test_bench_data[test_bench_data[:, 0] == user, :]
@@ -252,7 +253,8 @@ def validate_prediction(test_bench_path, prediction_item_path, user):
         if prediction.__contains__(test_bench[i, 1]):
             common_in_total += 1
 
-            print str(test_bench[i, 2]) + '\t' + str(prediction.get(test_bench[i, 1])) + '\t' + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
+            print str(test_bench[i, 2]) + '\t' + str(prediction.get(test_bench[i, 1])) + '\t'\
+                  + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
 
             error += math.pow((test_bench[i, 2] - prediction.get(test_bench[i, 1])), 2)
             if test_bench[i, 2] + prediction.get(test_bench[i, 1]) >= 8 and test_bench[i, 2] + prediction.get(test_bench[i, 1]) <= 10:
