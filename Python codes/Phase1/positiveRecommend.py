@@ -44,7 +44,7 @@ def convert_to_rating_mat(path):
     f.close()
 
     # Save two dimensions rating data to file.
-    with open('./rating_dat_BIG.txt', 'w+') as f:
+    with open('../dataset/output/user_rating_data.txt', 'w+') as f:
         for i in xrange(rows):
             line = ""
             for j in xrange(columns):
@@ -82,7 +82,7 @@ def calc_positive_mat_from_rating_mat(path):
                     pi[sub_set[i], sub_set[j]] += 1
 
     # Save two dimensions rating data to file.
-    with open('./PI_matrix_BIG.txt', 'w+') as f:
+    with open('../dataset/output/PI_matrix_BIG.txt', 'w+') as f:
         for i in xrange(columns):
             line = ""
             for j in xrange(columns):
@@ -166,7 +166,7 @@ def get_sub_positive_graph(rating_mat_path, positive_mat_path, user):
     print 'Success\t[Find ' + len(candidates).__str__() + ' candidate edges]'
 
     # Save edges information to file.
-    with open('./Candidate_edges_BIG_' + str(user) + '.txt', 'w+') as f:
+    with open('../dataset/output/Candidate_edges_BIG_' + str(user) + '.txt', 'w+') as f:
         for i in candidates:
             line = str(i.from_id) + '\t' + str(i.to_id) + '\t' + str(i.weight)
             f.write(line + '\n')
@@ -220,7 +220,7 @@ def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
 
     # Save recommended items to file.
     cnt = 0
-    with open('./recommended_items_BIG_' + str(user) + '.txt', 'w+') as f:
+    with open('../dataset/output/recommended_items_BIG_' + str(user) + '.txt', 'w+') as f:
         for i in candidates:
             if cnt >= k:
                 break
@@ -257,7 +257,8 @@ def validate_prediction(test_bench_path, prediction_item_path, user):
                   + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
 
             error += math.pow((test_bench[i, 2] - prediction.get(test_bench[i, 1])), 2)
-            if test_bench[i, 2] + prediction.get(test_bench[i, 1]) >= 8 and test_bench[i, 2] + prediction.get(test_bench[i, 1]) <= 10:
+            if test_bench[i, 2] + prediction.get(test_bench[i, 1]) >= 8 and \
+                                    test_bench[i, 2] + prediction.get(test_bench[i, 1]) <= 10:
                 right_prediction_cnt += 1
             else:
                 false_prediction_cnt += 1
@@ -269,29 +270,31 @@ def validate_prediction(test_bench_path, prediction_item_path, user):
 
 
 def automatically_recommend(user, k):
-    if not os.path.isfile('./rating_dat_BIG.txt'):
-        if not os.path.isfile('./u1_BIG.base'):
+    if not os.path.isfile('../dataset/output/user_rating_data.txt'):
+        if not os.path.isfile('../dataset/input/u1_BIG.base'):
             print 'Error\t[u1_BIG.base not found]'
             return
         else:
-            convert_to_rating_mat('./u1_BIG.base')
+            convert_to_rating_mat('../dataset/input/u1_BIG.base')
     print 'Success\t[Got rating data]'
 
-    if not os.path.isfile('./PI_matrix_BIG.txt'):
-        if not os.path.isfile('./rating_dat_BIG.txt'):
-            print 'Error\t[rating_dat_BIG.txt not found]'
+    if not os.path.isfile('../dataset/output/PI_matrix_BIG.txt'):
+        if not os.path.isfile('../dataset/output/user_rating_data.txt'):
+            print 'Error\t[user_rating_data.txt not found]'
             return
         else:
-            calc_positive_mat_from_rating_mat('./rating_dat_BIG.txt')
+            calc_positive_mat_from_rating_mat('../dataset/output/user_rating_data.txt')
     print 'Success\t[Got positive matrix data]'
 
-    if not os.path.isfile('./Candidate_edges_BIG_' + str(user) + '.txt'):
-        get_sub_positive_graph('./rating_dat_BIG.txt', './PI_matrix_BIG.txt', user)
+    if not os.path.isfile('../dataset/output/Candidate_edges_BIG_' + str(user) + '.txt'):
+        get_sub_positive_graph('../dataset/output/user_rating_data.txt', '../dataset/output/PI_matrix_BIG.txt', user)
 
-    if not os.path.isfile('./recommended_items_BIG_' + str(user) + '.txt'):
-        make_recommendation('./rating_dat_BIG.txt', './Candidate_edges_BIG_' + str(user) + '.txt', user, k)
+    if not os.path.isfile('../dataset/output/recommended_items_BIG_' + str(user) + '.txt'):
+        make_recommendation('../dataset/output/user_rating_data.txt',
+                            '../dataset/output/Candidate_edges_BIG_' + str(user) + '.txt', user, k)
 
-    validate_prediction('./u1_BIG.test', './recommended_items_BIG_' + str(user) + '.txt', user)
+    validate_prediction('../dataset/input/u1_BIG.test',
+                        '../dataset/output/recommended_items_BIG_' + str(user) + '.txt', user)
 
 if __name__ == "__main__":
     # convert_to_rating_mat('./u1_BIG.base')
@@ -299,5 +302,5 @@ if __name__ == "__main__":
     # get_sub_positive_graph('./rating_dat_BIG.txt', './PI_matrix_BIG.txt', 1)
     # make_recommendation('./rating_dat_BIG.txt','./Candidate_edges_BIG_1.txt',1, 2000)
     # validate_prediction('./u1_BIG.test','./recommended_items_BIG_1.txt',1)
-    automatically_recommend(1, 100)
+    automatically_recommend(1, 1000)
     # 1/42
