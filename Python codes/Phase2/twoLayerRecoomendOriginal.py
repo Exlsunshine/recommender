@@ -3,6 +3,7 @@ __author__ = 'USER007'
 
 import numpy
 import math
+import bintrees
 
 
 def calc_user_similarity_from_gene(normalized_user_gene_file_path):
@@ -149,36 +150,164 @@ class RatingData:
         return cmp(self.rating, other.rating)
 
     def __str__(self):
-        return '[user][item][rating]:\t' + self.user_id.__str__() + '\t' + self.item_id.__str__() + '\t' + self.rating.__str__()
+        return '[user][item][rating]:\t' + self.user_id.__str__() + '\t'\
+               + self.item_id.__str__() + '\t' + self.rating.__str__()
 
 
-def make_recommendation(user_gene_similarity_data_path, item_gene_similarity_data_path, normalized_user_rating_data_path, user_id, recommend_num):
+class RecommendItem:
+    recommend_to_user_id = 0
+    recommend_from_user_id = 0
+    user_similarity = 0
+
+    item_id = 0
+    original_rating = 0
+    total_referenced_cnt = 0
+
+    value = 0
+    weight = 0
+
+    def __init__(self, recommend_to_user_id, recommend_from_user_id, user_similarity,
+                 item_id, original_rating):
+        self.recommend_to_user_id = recommend_to_user_id
+        self.recommend_from_user_id = recommend_from_user_id
+        self.user_similarity = user_similarity
+        self.item_id = item_id
+        self.original_rating = original_rating
+        self.total_referenced_cnt += 1
+
+        self.value = original_rating * user_similarity
+        self.weight = user_similarity
+
+    def attach_another_connection(self, original_rating, user_similarity):
+        self.value += original_rating * user_similarity
+        self.weight += user_similarity
+        self.total_referenced_cnt += 1
+
+    def get_predict_rating(self):
+        if self.total_referenced_cnt == 1:
+            return round(self.value, 1)
+        else:
+            return round(1.0 * self.value / self.weight, 1)
+
+    def __cmp__(self, other):
+        return cmp(self.get_predict_rating(), other.get_predict_rating())
+
+    def __str__(self):
+        return 'Recommend item [' + str(self.item_id) + '] with predict rating at ['\
+               + str(self.get_predict_rating()) + ']'
+
+
+def make_recommendation(user_gene_similarity_data_path, user_rating_data_path, user_id, recommend_num):
     # Load user similarity data and item similarity data.
     user_sim_matrix = numpy.loadtxt(user_gene_similarity_data_path, dtype=float, delimiter="\t")
-    item_sim_matrix = numpy.loadtxt(item_gene_similarity_data_path, dtype=float, delimiter="\t")
-    normalize_user_rating_matrix = numpy.loadtxt(normalized_user_rating_data_path, dtype=float, delimiter="\t")
+    user_rating_matrix = numpy.loadtxt(user_rating_data_path, dtype=float, delimiter="\t")
+
+    # Drop the zero padding data(both zero row and zero column).
+    user_rating_matrix = numpy.delete(user_rating_matrix, 0, 0)
+    user_rating_matrix = numpy.delete(user_rating_matrix, 0, 1)
     print 'Success [Loading data completed]'
 
     # Find user's neighbors
     # user_id minus one because the matrix is zero-based index, but the user_id begins from one.
-    user = user_sim_matrix[user_id - 1,:]
+    user = user_sim_matrix[user_id - 1, :]
     top_similar_users = user.argsort()[-recommend_num:][::-1]
     neighbor_users = []
     for i in xrange(0, len(top_similar_users)):
-        neighbor_users.append(SimilarUser(user_id, top_similar_users[i] + 1, user[top_similar_users[i]]))
+        if user[top_similar_users[i]] > 0:
+            neighbor_users.append(SimilarUser(user_id, top_similar_users[i] + 1, user[top_similar_users[i]]))
     print 'Success [Finding user neighbors completed]'
 
     # Find those items that the given user has been rated.
     # i plus one because the matrix is zero-based index, but the item_id begins from one.
     rated_items = []
-    for i in xrange(0, normalize_user_rating_matrix.shape[1]):
-        if (normalize_user_rating_matrix[user_id - 1, i] != 0):
-            rated_items.append(RatingData(user_id, i + 1, normalize_user_rating_matrix[user_id -1, i]))
+    for i in xrange(0, user_rating_matrix.shape[1]):
+        if user_rating_matrix[user_id - 1, i] != 0:
+            rated_items.append(RatingData(user_id, i + 1, user_rating_matrix[user_id - 1, i]))
 
     # Sort rated_items so that I can find the given user's most like items.
     rated_items.sort(reverse=True)
     print 'Success [Finding rated items completed]'
 
+    # Compute recommendations.
+    recommendations = bintrees.RBTree()
+    for u in neighbor_users:
+        for i in xrange(0, user_rating_matrix.shape[1]):
+            if user_rating_matrix[u.alike_user_id - 1, i] != 0:
+                if recommendations.__contains__(i + 1):
+                    item = recommendations.get(i + 1)
+                    recommendations.remove(i + 1)
+                    item.attach_another_connection(user_rating_matrix[u.alike_user_id - 1, i],
+                                                   user_sim_matrix[user_id - 1, u.alike_user_id - 1])
+                    recommendations.insert(i + 1, item)
+                else:
+                    item = RecommendItem(user_id, u.alike_user_id,
+                                         user_sim_matrix[user_id - 1, u.alike_user_id - 1],
+                                         i + 1, user_rating_matrix[u.alike_user_id - 1, i])
+                    recommendations.insert(i + 1, item)
+
+    # Remove those items that the given user has been rated.
+    candidates = []
+    for key in recommendations.keys():
+        already_rated = False
+        for item in rated_items:
+            if item.item_id == key:
+                already_rated = True
+                break
+        if not already_rated:
+            candidates.append(recommendations.get(key))
+    candidates.sort(reverse=True)
+
+    # Save recommended items to file.
+    cnt = 0
+    with open('../dataset/output/recommendation_to_user_' + str(user_id) + '.txt', 'w+') as f:
+        for i in candidates:
+            if cnt >= recommend_num:
+                break
+            line = str(user_id) + '\t' + str(i.item_id) + '\t' + str(i.get_predict_rating())
+            f.write(line + '\n')
+            cnt += 1
+        f.close()
+
+
+def validate_prediction(test_bench_path, prediction_item_path, user):
+    # Load test bench data and predict data.
+    test_bench_data = numpy.loadtxt(test_bench_path, dtype=int, delimiter="\t")
+    prediction_data = numpy.loadtxt(prediction_item_path, dtype=float, delimiter="\t")
+
+    # Get the given user's test bench data
+    test_bench = test_bench_data[test_bench_data[:, 0] == user, :]
+    test_bench = test_bench[:, [0, 1, 2]]
+
+    prediction = bintrees.RBTree()
+    for i in range(0, len(prediction_data)):
+        if not prediction.__contains__(prediction_data[i, 1]):
+            prediction.insert(prediction_data[i, 1], prediction_data[i, 2])
+
+    common_in_total = 0
+    error = 0.0
+    right_prediction_cnt = 0
+    false_prediction_cnt = 0
+
+    for i in range(0, len(test_bench)):
+        if prediction.__contains__(test_bench[i, 1]):
+            common_in_total += 1
+            print str(test_bench[i, 2]) + '\t' + str(prediction.get(test_bench[i, 1])) + '\t'\
+                  + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
+
+            error += math.pow((test_bench[i, 2] - prediction.get(test_bench[i, 1])), 2)
+
+            like = True if test_bench[i, 2] >= 4 else False
+            predict = True if round(prediction.get(test_bench[i, 1]), 0) >= 4 else False
+
+            if like == predict:
+                right_prediction_cnt += 1
+            else:
+                false_prediction_cnt += 1
+
+    print 'MSE is:\t' + str(math.sqrt(error))
+    print 'Common in total:\t' + str(common_in_total)
+    print 'Right rate:\t' + str(1.0 * right_prediction_cnt / common_in_total * 100) + '\t' + str(right_prediction_cnt)
+    print 'False rate:\t' + str(1.0 * false_prediction_cnt / common_in_total * 100) + '\t' + str(false_prediction_cnt)
 
 
 if __name__ == '__main__':
@@ -188,8 +317,8 @@ if __name__ == '__main__':
     # normalized_user_gene_data_path = '../dataset/output/normalized_user_genes_data.txt'
     # calc_user_similarity_from_gene(normalized_user_gene_data_path)
 
-    user_gene_similarity_data = '../dataset/output/user_gene_similarity_data.txt'
-    item_gene_similarity_data = '../dataset/output/item_gene_similarity_data.txt'
-    normalized_user_rating_data = '../dataset/output/normalized_user_rating_data.txt'
+    # user_gene_similarity_data = '../dataset/output/user_gene_similarity_data.txt'
+    # user_rating_data = '../dataset/output/user_rating_data.txt'
+    # make_recommendation(user_gene_similarity_data, user_rating_data, 1, 1000)
 
-    make_recommendation(user_gene_similarity_data, item_gene_similarity_data, normalized_user_rating_data,1, 20)
+    validate_prediction('../dataset/input/u1_BIG.test', '../dataset/output/recommendation_to_user_1.txt', 1)
