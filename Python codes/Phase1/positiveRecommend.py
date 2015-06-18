@@ -257,11 +257,21 @@ def validate_prediction(test_bench_path, prediction_item_path, user):
                   + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
 
             error += math.pow((test_bench[i, 2] - prediction.get(test_bench[i, 1])), 2)
-            if test_bench[i, 2] + prediction.get(test_bench[i, 1]) >= 8 and \
-                                    test_bench[i, 2] + prediction.get(test_bench[i, 1]) <= 10:
+
+
+
+
+            like = True if test_bench[i, 2] >= 4 else False
+            predict = True if prediction.get(test_bench[i, 1]) >= 4 else False
+            if like == predict:
                 right_prediction_cnt += 1
             else:
                 false_prediction_cnt += 1
+            # if test_bench[i, 2] + prediction.get(test_bench[i, 1]) >= 8 and \
+            #                         test_bench[i, 2] + prediction.get(test_bench[i, 1]) <= 10:
+            #     right_prediction_cnt += 1
+            # else:
+            #     false_prediction_cnt += 1
 
     print 'MSE is:\t' + str(math.sqrt(error))
     print 'Common in total:\t' + str(common_in_total)
