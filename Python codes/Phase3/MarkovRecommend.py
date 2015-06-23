@@ -60,7 +60,7 @@ def brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, 
     positive_items = numpy.loadtxt(positive_items_path, dtype=int, delimiter="\t")
     print 'Success\t[Loading data from file completed]'
 
-    # Compute permutations.,
+    # Compute permutations,
     # and get the first k columns.
     original_data = numpy.array(positive_items[:, 1])
     permutations = []
@@ -89,8 +89,45 @@ def brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, 
                 heapq.heappop(top_k_recommendation)
 
     print top_k_recommendation.__len__()
+    rcm = []
     for i in xrange(0, k):
-        print heapq.heappop(top_k_recommendation)
+        item = heapq.heappop(top_k_recommendation)
+        print item
+        rcm.append(item.item_id)
+
+    validation('../dataset/input/u1_BIG.test', user_id, rcm)
+
+
+def validation(test_bench_path, user_id, recommendations):
+    test_bench_data = numpy.loadtxt(test_bench_path, dtype=int, delimiter="\t")
+
+    # Get the given user's test bench data
+    # test_bench format looks like:
+    # user_id   item_id     rating_value
+    test_bench = test_bench_data[test_bench_data[:, 0] == user_id, :]
+    test_bench = test_bench[:, [0, 1, 2]]
+
+    prediction = bintrees.RBTree()
+    for i in range(0, len(recommendations)):
+        if not prediction.__contains__(recommendations[i]):
+            prediction.insert(recommendations[i], recommendations[i])
+
+    right_cnt = 0
+    false_cnt = 0
+    miss_cnt = 0
+
+    for i in range(0, len(test_bench)):
+        if prediction.__contains__(test_bench[i, 1]):
+            if test_bench[i, 2] >=4:
+                right_cnt += 1
+            else:
+                false_cnt += 1
+        else:
+            miss_cnt += 1
+
+    print 'Right\t' + str(right_cnt)
+    print 'False\t' + str(false_cnt)
+    print 'Miss\t' + str(miss_cnt)
 
 
 def evaluate_possibilities(positive_matrix, permutation, rated_items):
@@ -98,6 +135,7 @@ def evaluate_possibilities(positive_matrix, permutation, rated_items):
     probability = 1
     from_index = 0
     to_index = from_index + 1
+
     while True:
         if to_index == len(permutation):
             break
@@ -117,12 +155,12 @@ def evaluate_possibilities(positive_matrix, permutation, rated_items):
         return []
     else:
         # If the markov chain is intact,
-        # then I make some recommendations based on the probability.
+        # then make some recommendations based on the probability.
         recommendation = []
         for i in xrange(1, positive_matrix.shape[1]):
             rating_cnt = positive_matrix[permutation[from_index], i]
             if rating_cnt != 0 and not rated_items.__contains__(i):
-                access_prob = 1.0 * rating_cnt / sum(positive_matrix[from_index, :])
+                access_prob = 1.0 * rating_cnt / sum(positive_matrix[permutation[from_index], :])
                 recommendation.append(RecommendItems(i, probability * access_prob, permutation))
 
         return recommendation
@@ -179,4 +217,4 @@ if __name__ == '__main__':
     positive_items_path = '../dataset/output/top_10_positive_items_1.txt'
 
     # get_top_k_positive_items(user_rating_path, 1, 10)
-    brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path, 1, 6, 20)
+    brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path, 1, 3, 1000)
