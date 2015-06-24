@@ -5,7 +5,8 @@ import numpy
 import bintrees
 import heapq
 import sys
-import  Combination
+import Combination
+import cProfile
 
 
 class RatingData:
@@ -55,7 +56,8 @@ def swap(arr, i, j):
     arr[j] = temp
 
 
-def brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path, user_id, markov_depth, k):
+def brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path, user_id,
+                                      markov_depth, k):
     # Load rating matrix data, positive matrix data and positive rated items data.
     rating_matrix = numpy.loadtxt(rating_matrix_path, dtype=int, delimiter="\t")
     positive_matrix = numpy.loadtxt(positive_matrix_path, dtype=int, delimiter="\t")
@@ -148,7 +150,6 @@ def validation(test_bench_path, user_id, recommendations):
     print 'Success\t[Saving positive items data completed]'
 
 
-
 def evaluate_possibilities(positive_matrix, permutation, rated_items, summation_cache):
     # Simulate markov chain to calculate the probability.
     probability = 1
@@ -164,7 +165,6 @@ def evaluate_possibilities(positive_matrix, permutation, rated_items, summation_
                 probability = 0
                 break
             else:
-                summation = 0
                 if summation_cache.__contains__(permutation[from_index]):
                     summation = summation_cache.get(permutation[from_index])
                 else:
@@ -186,7 +186,6 @@ def evaluate_possibilities(positive_matrix, permutation, rated_items, summation_
         for i in xrange(1, positive_matrix.shape[1]):
             rating_cnt = positive_matrix[permutation[from_index], i]
             if rating_cnt != 0 and not rated_items.__contains__(i):
-                summation = 0
                 if summation_cache.__contains__(permutation[from_index]):
                     summation = summation_cache.get(permutation[from_index])
                 else:
@@ -254,7 +253,7 @@ class Logger(object):
         self.log.write(message)
 
 
-if __name__ == '__main__':
+def unit_test():
     sys.stdout = Logger()
 
     rating_matrix_path = '../dataset/output/user_rating_data.txt'
@@ -263,3 +262,6 @@ if __name__ == '__main__':
 
     # get_top_k_positive_items(user_rating_path, 1, 10)
     brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path, 1, 7, 1000)
+
+if __name__ == '__main__':
+    cProfile.run('unit_test()')
