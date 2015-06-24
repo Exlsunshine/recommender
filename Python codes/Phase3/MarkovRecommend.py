@@ -244,10 +244,22 @@ def get_top_k_positive_items(user_rating_path, user_id, k):
     print 'Success\t[Saving positive items data completed]'
 
 
+class Logger(object):
+    def __init__(self):
+        self.terminal = sys.stdout
+        self.log = open("../dataset/output/logfile.log", "w")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+
 if __name__ == '__main__':
+    sys.stdout = Logger()
+
     rating_matrix_path = '../dataset/output/user_rating_data.txt'
     positive_matrix_path = '../dataset/output/PI_matrix_BIG.txt'
     positive_items_path = '../dataset/output/top_10_positive_items_1.txt'
 
     # get_top_k_positive_items(user_rating_path, 1, 10)
-    brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path, 1, 1, 1000)
+    brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path, 1, 7, 1000)
