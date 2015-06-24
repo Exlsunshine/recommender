@@ -3,7 +3,6 @@ __author__ = 'USER007'
 import numpy as np
 import time
 import bintrees
-import math
 import os
 
 current_milli_time = lambda: int(round(time.time() * 1000))
@@ -244,36 +243,34 @@ def validate_prediction(test_bench_path, prediction_item_path, user):
         if not prediction.__contains__(prediction_data[i, 1]):
             prediction.insert(prediction_data[i, 1], prediction_data[i, 2])
 
-    common_in_total = 0
-    error = 0.0
-    right_prediction_cnt = 0
-    false_prediction_cnt = 0
+    true_positive = 0
+    false_positive = 0
+    false_negative = 0
+    true_negative = 0
 
     for i in range(0, len(test_bench)):
+        real_value = True if test_bench[i, 2] >= 4 else False
+
         if prediction.__contains__(test_bench[i, 1]):
-            common_in_total += 1
+            predict_value = True if prediction.get(test_bench[i, 1]) >= 4 else False
+        else:
+            predict_value = False
 
-            print str(test_bench[i, 2]) + '\t' + str(prediction.get(test_bench[i, 1])) + '\t'\
-                + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
-
-            error += math.pow((test_bench[i, 2] - prediction.get(test_bench[i, 1])), 2)
-
-            like = True if test_bench[i, 2] >= 4 else False
-            predict = True if prediction.get(test_bench[i, 1]) >= 4 else False
-            if like == predict:
-                right_prediction_cnt += 1
+        if real_value == predict_value:
+            if real_value == True:
+                true_positive += 1
             else:
-                false_prediction_cnt += 1
-            # if test_bench[i, 2] + prediction.get(test_bench[i, 1]) >= 8 and \
-            #                         test_bench[i, 2] + prediction.get(test_bench[i, 1]) <= 10:
-            #     right_prediction_cnt += 1
-            # else:
-            #     false_prediction_cnt += 1
+                true_negative += 1
+        else:
+            if real_value == True and predict_value == False:
+                false_negative += 1
+            else:
+                false_positive += 1
 
-    print 'MSE is:\t' + str(math.sqrt(error))
-    print 'Common in total:\t' + str(common_in_total)
-    print 'Right rate:\t' + str(1.0 * right_prediction_cnt / common_in_total * 100) + '\t' + str(right_prediction_cnt)
-    print 'False rate:\t' + str(1.0 * false_prediction_cnt / common_in_total * 100) + '\t' + str(false_prediction_cnt)
+    print 'True positive\t' + str(true_positive)
+    print 'False positive\t' + str(false_positive)
+    print 'True negative\t' + str(true_negative)
+    print 'False negative\t' + str(false_negative)
 
 
 def automatically_recommend(user, k):
