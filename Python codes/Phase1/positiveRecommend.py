@@ -216,7 +216,7 @@ def make_recommendation(rating_mat_path, candidates_mat_path, user, k):
         if i >= k:
             break
         print i.__str__() + '\t:\talgorithm recommends user to checkout out item:\t' + str(candidates[i].item_id) \
-              + '\t' + str(candidates[i].get_predict_rating())
+            + '\t' + str(candidates[i].get_predict_rating())
 
     # Save recommended items to file.
     cnt = 0
@@ -254,12 +254,9 @@ def validate_prediction(test_bench_path, prediction_item_path, user):
             common_in_total += 1
 
             print str(test_bench[i, 2]) + '\t' + str(prediction.get(test_bench[i, 1])) + '\t'\
-                  + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
+                + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
 
             error += math.pow((test_bench[i, 2] - prediction.get(test_bench[i, 1])), 2)
-
-
-
 
             like = True if test_bench[i, 2] >= 4 else False
             predict = True if prediction.get(test_bench[i, 1]) >= 4 else False
