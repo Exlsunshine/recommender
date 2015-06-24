@@ -4,6 +4,7 @@ __author__ = 'USER007'
 import numpy
 import math
 import bintrees
+import os
 
 
 """
@@ -352,6 +353,18 @@ def validate_prediction(test_bench_path, prediction_item_path, user):
     print 'Common in total:\t' + str(common_in_total)
     print 'Right rate:\t' + str(1.0 * right_prediction_cnt / common_in_total * 100) + '\t' + str(right_prediction_cnt)
     print 'False rate:\t' + str(1.0 * false_prediction_cnt / common_in_total * 100) + '\t' + str(false_prediction_cnt)
+
+
+def automatically_recommend(user, k):
+    if not os.path.isfile('../dataset/output/user_rating_data.txt'):
+        if not os.path.isfile('../dataset/input/u1_BIG.base'):
+            print 'Error\t[u1_BIG.base not found]'
+            return
+        else:
+            convert_to_rating_mat('../dataset/input/u1_BIG.base')
+    print 'Success\t[Got rating data]'
+
+
 
 
 if __name__ == '__main__':
