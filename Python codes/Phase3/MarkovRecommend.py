@@ -5,6 +5,7 @@ import numpy
 import bintrees
 import heapq
 
+import  Combination
 
 class RatingData:
     user_id = -1
@@ -60,12 +61,12 @@ def brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, 
     positive_items = numpy.loadtxt(positive_items_path, dtype=int, delimiter="\t")
     print 'Success\t[Loading data from file completed]'
 
-    # Compute permutations,
-    # and get the first k columns.
+    # Compute combinations and permutations.
     original_data = numpy.array(positive_items[:, 1])
+    combinations = Combination.combination(original_data, markov_depth)
     permutations = []
-    original_data = original_data[0: markov_depth]
-    perm(original_data, 0, len(original_data), permutations)
+    for comb in combinations:
+        perm(comb, 0, len(comb), permutations)
     print 'Success\t[Computing permutations completed]'
 
     # Get those items that the given user has been rated.
@@ -118,7 +119,7 @@ def validation(test_bench_path, user_id, recommendations):
 
     for i in range(0, len(test_bench)):
         if prediction.__contains__(test_bench[i, 1]):
-            if test_bench[i, 2] >=4:
+            if test_bench[i, 2] >= 4:
                 right_cnt += 1
             else:
                 false_cnt += 1
@@ -217,4 +218,4 @@ if __name__ == '__main__':
     positive_items_path = '../dataset/output/top_10_positive_items_1.txt'
 
     # get_top_k_positive_items(user_rating_path, 1, 10)
-    brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path, 1, 3, 1000)
+    brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path, 1, 4, 1000)
