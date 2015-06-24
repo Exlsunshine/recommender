@@ -6,6 +6,50 @@ import math
 import bintrees
 
 
+"""
+Convert [userID, itemID, ratingValue, timestamp] format to [two dimensions rating matrix] format
+"""
+
+
+def convert_to_rating_mat(path):
+    # Get all user IDs and item IDs.
+    user_ids = set()
+    item_ids = set()
+    with open(path) as f:
+        for line in f:
+            values = line.split('\t')
+            user_ids.add(int(values[0]))
+            item_ids.add(int(values[1]))
+    f.close()
+
+    # Load rating data.
+    # Dimensions plus one because I want one-based index instead of zero-based index.
+    # It's convenient that rating_matrix[i][j] stands for userI gives itemJ a rating,
+    # rather than rating_matrix[i - 1][j - 1] stands for userI gives itemJ.
+    rating_matrix = numpy.zeros((max(user_ids) + 1, max(item_ids) + 1), dtype=int)
+    rows = len(rating_matrix)
+    columns = len(rating_matrix[0])
+    print 'file contains rows\t' + rows.__str__()
+    print 'file contains columns\t' + columns.__str__()
+
+    with open(path) as f:
+        for line in f:
+            values = line.split('\t')
+            uid = values[0]
+            iid = values[1]
+            rating = values[2]
+            rating_matrix[int(uid)][int(iid)] = int(rating)
+    f.close()
+
+    # Save two dimensions rating data to file.
+    with open('../dataset/output/user_rating_data.txt', 'w+') as f:
+        for i in xrange(rows):
+            line = ""
+            for j in xrange(columns):
+                line += rating_matrix[i][j].__str__() + '\t'
+            f.write(line[:-1] + '\n')
+
+
 def calc_user_similarity_from_gene(normalized_user_gene_file_path):
     # Load raw user gene data.
     user_number = 0
@@ -292,7 +336,7 @@ def validate_prediction(test_bench_path, prediction_item_path, user):
         if prediction.__contains__(test_bench[i, 1]):
             common_in_total += 1
             print str(test_bench[i, 2]) + '\t' + str(prediction.get(test_bench[i, 1])) + '\t'\
-                  + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
+                + str((test_bench[i, 2] - prediction.get(test_bench[i, 1])))
 
             error += math.pow((test_bench[i, 2] - prediction.get(test_bench[i, 1])), 2)
 
