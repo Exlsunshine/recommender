@@ -1,6 +1,5 @@
 __author__ = 'USER007'
 
-
 import numpy
 import bintrees
 import heapq
@@ -121,28 +120,37 @@ def validation(test_bench_path, user_id, recommendations):
         if not prediction.__contains__(recommendations[i]):
             prediction.insert(recommendations[i], recommendations[i])
 
-    right_cnt = 0
-    false_cnt = 0
-    miss_cnt = 0
+    true_positive = 0
+    false_positive = 0
+    false_negative = 0
+    true_negative = 0
 
     for i in range(0, len(test_bench)):
-        if prediction.__contains__(test_bench[i, 1]):
-            if test_bench[i, 2] >= 4:
-                right_cnt += 1
-            else:
-                false_cnt += 1
-        else:
-            miss_cnt += 1
+        real_value = True if test_bench[i, 2] >= 4 else False
+        predict_value = True if prediction.__contains__(test_bench[i, 1]) else False
 
-    print 'Right\t' + str(right_cnt)
-    print 'False\t' + str(false_cnt)
-    print 'Miss\t' + str(miss_cnt)
+        if real_value == predict_value:
+            if real_value is True:
+                true_positive += 1
+            else:
+                true_negative += 1
+        else:
+            if real_value is True and predict_value is False:
+                false_negative += 1
+            else:
+                false_positive += 1
+
+    print 'True positive\t' + str(true_positive)
+    print 'False positive\t' + str(false_positive)
+    print 'True negative\t' + str(true_negative)
+    print 'False negative\t' + str(false_negative)
 
     # Save positive items information to file.
     with open('../dataset/output/report' + str(user_id) + '.txt', 'w+') as f:
-        f.write('#Right\t' + str(right_cnt) + '\n')
-        f.write('#False\t' + str(false_cnt) + '\n')
-        f.write('#Miss\t' + str(miss_cnt) + '\n')
+        f.write('#True positive\t' + str(true_positive) + '\n')
+        f.write('#False positive\t' + str(false_positive) + '\n')
+        f.write('#True negative\t' + str(true_negative) + '\n')
+        f.write('#False negative\t' + str(false_negative) + '\n')
 
         for i in recommendations:
             f.write(str(i) + '\n')
@@ -257,10 +265,11 @@ def unit_test():
     sys.stdout = Logger()
     model = imp.load_source('positiveRecommend', '../Phase1/positiveRecommend.py')
 
+    # Note that the depth of the markov chain has to be smaller than the value of k!
     user_id = 1
     k = 10
-    markov_depth = 3 # Note that the depth of the markov chain has to be smaller than the value of k!
-    recommend_num = 1000
+    markov_depth = 5
+    recommend_num = 100
 
     model.convert_to_rating_mat('../dataset/input/u1_BIG.base')
     rating_matrix_path = '../dataset/output/user_rating_data.txt'
