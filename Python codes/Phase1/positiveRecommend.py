@@ -4,6 +4,7 @@ import numpy as np
 import time
 import bintrees
 import os
+import sys
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -66,7 +67,8 @@ def calc_positive_mat_from_rating_mat(path):
 
     # Compute P set for every user.
     for u in range(1, rows):
-        print 1.0 * u / rows * 100
+        sys.stdout.write("Computing progress: %f%%   \r" % (round(1.0 * u / rows, 4) * 100))
+
         r = rating_matrix[u, :]
         avg = 1.0 * r.sum() / len(r[r != 0])
 
