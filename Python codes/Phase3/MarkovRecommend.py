@@ -7,6 +7,7 @@ import heapq
 import sys
 import Combination
 import cProfile
+import imp
 
 
 class RatingData:
@@ -83,8 +84,7 @@ def brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, 
     min_probability = 0
     summation_cache = bintrees.RBTree()
     for i in xrange(0, len(permutations)):
-        sys.stdout.write("Download progress: %f%%   \r" % (round(1.0 * i / len(permutations), 4) * 100))
-        # + str(i) + '/\t' + str(len(permutations))
+        sys.stdout.write("Evaluation progress: %f%%   \r" % (round(1.0 * i / len(permutations), 4) * 100))
         recommendation = evaluate_possibilities(positive_matrix, permutations[i], rated_items, summation_cache)
         if len(recommendation) > 0:
             # Save all recommendations first.
@@ -255,13 +255,25 @@ class Logger(object):
 
 def unit_test():
     sys.stdout = Logger()
+    model = imp.load_source('positiveRecommend', '../Phase1/positiveRecommend.py')
 
+    user_id = 1
+    k = 10
+    markov_depth = 3 # Note that the depth of the markov chain has to be smaller than the value of k!
+    recommend_num = 1000
+
+    model.convert_to_rating_mat('../dataset/input/u1_BIG.base')
     rating_matrix_path = '../dataset/output/user_rating_data.txt'
-    positive_matrix_path = '../dataset/output/PI_matrix_BIG.txt'
-    positive_items_path = '../dataset/output/top_10_positive_items_1.txt'
 
-    # get_top_k_positive_items(user_rating_path, 1, 10)
-    brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path, 1, 7, 1000)
+    model.calc_positive_mat_from_rating_mat(rating_matrix_path)
+    positive_matrix_path = '../dataset/output/PI_matrix_BIG.txt'
+
+    get_top_k_positive_items(rating_matrix_path, user_id, k)
+    positive_items_path = '../dataset/output/top_' + str(k) + '_positive_items_1.txt'
+
+    brute_force_markov_recommendation(rating_matrix_path, positive_matrix_path, positive_items_path,
+                                      user_id, markov_depth, recommend_num)
+
 
 if __name__ == '__main__':
     cProfile.run('unit_test()')
