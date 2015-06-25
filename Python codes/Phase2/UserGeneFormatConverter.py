@@ -107,9 +107,13 @@ def std_dev_normalization(user_data):
 
     return user_data
 
-if __name__ == '__main__':
+
+def generate_normalized_user_gene_data():
     occupation_path = '../dataset/input/u.occupation'
     user_path = '../dataset/input/u.user'
 
     occupation = load_occupation_data(occupation_path)
-    user = load_user_gene_data(user_path, occupation)
+    load_user_gene_data(user_path, occupation)
+
+if __name__ == '__main__':
+    generate_normalized_user_gene_data()
