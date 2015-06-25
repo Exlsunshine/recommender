@@ -18,7 +18,7 @@ def combination(original_data, k):
             if i + 1 < binary_flag.shape[1]:
                 if binary_flag[0, i] == 1 and binary_flag[0, i + 1] == 0:
                     record_combination(original_data, binary_flag, combinations)
-                    swap(binary_flag[0,:], i, i + 1)
+                    swap(binary_flag[0, :], i, i + 1)
                     shift_left(binary_flag, i)
                     break
     # Save the last combination
@@ -39,13 +39,13 @@ def shift_left(binary_flag, i):
     j = i - 1
     while j >= 0 and j >= left:
         if binary_flag[0, j] == 1:
-            swap(binary_flag[0,:], left, j)
+            swap(binary_flag[0, :], left, j)
             left += 1
         j -= 1
 
 
 def record_combination(original_data, binary_flag, combinations):
-    condition = binary_flag[0,:] != 0
+    condition = binary_flag[0, :] != 0
     comb = numpy.extract(condition, original_data)
     combinations.append(comb)
 
