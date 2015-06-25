@@ -5,6 +5,8 @@ import numpy
 import math
 import bintrees
 import os
+import sys
+import time
 
 
 """
@@ -57,7 +59,10 @@ def calc_user_similarity_from_rating_matrix(rating_mat_path):
 
     # Normalize rating data
     for i in xrange(1, rating_matrix.shape[0]):
-        print 1.0 * i / rating_matrix.shape[0] * 100
+        sys.stdout.write('\r')
+        sys.stdout.write("Process of normalize:%f%%\t" % (round(1.0 * i / rating_matrix.shape[0], 4) * 100))
+        sys.stdout.flush()
+
         r = rating_matrix[i, :]
         avg = r.sum() / len(r[r != 0])
         variance = numpy.zeros((1, rating_matrix.shape[1]), dtype=float)[0, :]
@@ -67,7 +72,8 @@ def calc_user_similarity_from_rating_matrix(rating_mat_path):
     # Compute user similarities.
     user_sim_graph_data = numpy.zeros((rating_matrix.shape[0], rating_matrix.shape[0]))
     for i in xrange(1, rating_matrix.shape[0]):
-        print 'Process of user similarity computation:%f%%' % (1.0 * i / rating_matrix.shape[0] * 100)
+        sys.stdout.write("\rProcess of user similarity computation:%f%%" % (1.0 * i / rating_matrix.shape[0] * 100))
+
         for j in xrange(1, rating_matrix.shape[0]):
             if i == j:
                 user_sim_graph_data[i, j] = 0
@@ -430,4 +436,5 @@ if __name__ == '__main__':
     # user_rating_data = '../dataset/output/user_rating_data.txt'
     # make_recommendation(user_gene_similarity_data, user_rating_data, 1, 1000)
 
-    validate_prediction('../dataset/input/u1_BIG.test', '../dataset/output/recommendation_to_user_1.txt', 1)
+    # validate_prediction('../dataset/input/u1_BIG.test', '../dataset/output/recommendation_to_user_1.txt', 1)
+    automatically_recommend(1, 100)
