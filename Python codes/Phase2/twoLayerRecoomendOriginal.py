@@ -7,6 +7,8 @@ import bintrees
 import os
 import sys
 
+import UserGeneFormatConverter
+
 
 """
 Convert [userID, itemID, ratingValue, timestamp] format to [two dimensions rating matrix] format
@@ -397,30 +399,50 @@ def validate_prediction(test_bench_path, prediction_item_path, user):
     print 'False negative\t' + str(false_negative)
 
 
-def automatically_recommend(user_id, recommend_num):
-    if not os.path.isfile('../dataset/output/user_rating_data.txt'):
-        if not os.path.isfile('../dataset/input/u1_BIG.base'):
-            print 'Error\t[u1_BIG.base not found]'
-            return
-        else:
-            convert_to_rating_mat('../dataset/input/u1_BIG.base')
+# def automatically_recommend(user_id, recommend_num):
+#     if not os.path.isfile('../dataset/output/user_rating_data.txt'):
+#         if not os.path.isfile('../dataset/input/u1_BIG.base'):
+#             print 'Error\t[u1_BIG.base not found]'
+#             return
+#         else:
+#             convert_to_rating_mat('../dataset/input/u1_BIG.base')
+#     print 'Success\t[Got rating data]'
+#
+#     if not os.path.isfile('../dataset/output/user_similarities.txt'):
+#         if not os.path.isfile('../dataset/output/user_rating_data.txt'):
+#             print 'Error\t[user_rating_data.txt not found]'
+#             return
+#         else:
+#             calc_user_similarity_from_rating_matrix('../dataset/output/user_rating_data.txt')
+#     print 'Success\t[Got user similarity data]'
+#
+#     if not os.path.isfile('../dataset/output/recommendation_to_user_' + str(user_id) + '.txt'):
+#         if not os.path.isfile('../dataset/output/user_similarities.txt'):
+#             print 'Error\t[user_similarities.txt not found]'
+#             return
+#         else:
+#             make_recommendation('../dataset/output/user_similarities.txt', '../dataset/output/user_rating_data.txt',
+#                                 user_id, recommend_num)
+#     print 'Success\t[Got recommendation data]'
+#
+#     validate_prediction('../dataset/input/u1_BIG.test',
+#                         '../dataset/output/recommendation_to_user_' + str(user_id) + '.txt', user_id)
+
+
+def automatically_recommend(user_id, recommend_num, user_gene_based_similarity = False):
+    convert_to_rating_mat('../dataset/input/u1_BIG.base')
     print 'Success\t[Got rating data]'
 
-    if not os.path.isfile('../dataset/output/user_similarities.txt'):
-        if not os.path.isfile('../dataset/output/user_rating_data.txt'):
-            print 'Error\t[user_rating_data.txt not found]'
-            return
-        else:
-            calc_user_similarity_from_rating_matrix('../dataset/output/user_rating_data.txt')
+    if user_gene_based_similarity:
+        UserGeneFormatConverter.generate_normalized_user_gene_data()
+        calc_user_similarity_from_gene('../dataset/output/normalized_user_genes_data.txt')
+        similarity_data_path = '../dataset/output/user_gene_similarity_data.txt'
+    else:
+        calc_user_similarity_from_rating_matrix('../dataset/output/user_rating_data.txt')
+        similarity_data_path = '../dataset/output/user_similarities.txt'
     print 'Success\t[Got user similarity data]'
 
-    if not os.path.isfile('../dataset/output/recommendation_to_user_' + str(user_id) + '.txt'):
-        if not os.path.isfile('../dataset/output/user_similarities.txt'):
-            print 'Error\t[user_similarities.txt not found]'
-            return
-        else:
-            make_recommendation('../dataset/output/user_similarities.txt', '../dataset/output/user_rating_data.txt',
-                                user_id, recommend_num)
+    make_recommendation(similarity_data_path, '../dataset/output/user_rating_data.txt', user_id, recommend_num)
     print 'Success\t[Got recommendation data]'
 
     validate_prediction('../dataset/input/u1_BIG.test',
@@ -439,4 +461,4 @@ if __name__ == '__main__':
     # make_recommendation(user_gene_similarity_data, user_rating_data, 1, 1000)
 
     # validate_prediction('../dataset/input/u1_BIG.test', '../dataset/output/recommendation_to_user_1.txt', 1)
-    automatically_recommend(1, 100)
+    automatically_recommend(1, 100, True)
