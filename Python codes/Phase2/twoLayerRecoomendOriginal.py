@@ -51,6 +51,41 @@ def convert_to_rating_mat(path):
             f.write(line[:-1] + '\n')
 
 
+
+def calc_user_similarity_from_rating_matrix(rating_mat_path):
+    # Load rating matrix data and positive matrix data.
+    rating_matrix = numpy.loadtxt(rating_mat_path, dtype=float, delimiter="\t")
+
+    # Normalize rating data
+    for i in xrange(1, rating_matrix.shape[0]):
+        print 1.0 * i / rating_matrix.shape[0] * 100
+        r = rating_matrix[i, :]
+        avg = r.sum() / len(r[r != 0])
+        variance = numpy.zeros((1, rating_matrix.shape[1]), dtype=float)[0, :]
+        variance[r != 0] = avg
+        rating_matrix[i, :] = rating_matrix[i, :] - variance
+
+    # Save two digits to make the result more concise.
+    rating_matrix.round(2)
+
+    # Compute user similarities.
+    user_sim_graph_data = numpy.zeros((rating_matrix.shape[0], rating_matrix.shape[0]))
+    for i in xrange(1, rating_matrix.shape[0]):
+        print 'Process of user similarity computation:%f%%'  % (1.0 * i / rating_matrix.shape[0] * 100)
+        for j in xrange(i + 1, rating_matrix.shape[0]):
+            user_sim_graph_data[i, j] = round(cosine_similarity(rating_matrix[i, :], rating_matrix[j, :]), 2)
+            user_sim_graph_data[j, i] = user_sim_graph_data[i, j]
+    print 'Successful\t[Computing user similarities completed]'
+
+    # Save user similarities to file.
+    with open('../dataset/output/user_similarities.txt', 'w+') as f:
+        for i in xrange(0, user_sim_graph_data.shape[0]):
+            line = ""
+            for j in xrange(0, user_sim_graph_data.shape[0]):
+                line += user_sim_graph_data[i][j].__str__() + '\t'
+            f.write(line[:-1] + '\n')
+
+
 def calc_user_similarity_from_gene(normalized_user_gene_file_path):
     # Load raw user gene data.
     user_number = 0
@@ -363,8 +398,6 @@ def automatically_recommend(user, k):
         else:
             convert_to_rating_mat('../dataset/input/u1_BIG.base')
     print 'Success\t[Got rating data]'
-
-
 
 
 if __name__ == '__main__':
